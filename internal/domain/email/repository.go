@@ -20,7 +20,7 @@ func (r *EmailRepository) Save(email EmailData) error {
 	`
 	_, err := r.db.Exec(query, email.MessageID, email.Date, email.From, email.To, email.Subject)
 	if err != nil {
-		return fmt.Errorf("error saving email: %w", err)
+		return fmt.Errorf("error guardando email: %w", err)
 	}
 	return nil
 }

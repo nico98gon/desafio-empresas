@@ -38,7 +38,7 @@ func ProcessFile(filePath string, results chan<- EmailData, wg *sync.WaitGroup) 
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Printf("Error reading file %s: %v\n", filePath, err)
+		fmt.Printf("Error leyendo archivo %s: %v\n", filePath, err)
 		return
 	}
 
