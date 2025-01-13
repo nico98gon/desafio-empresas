@@ -4,6 +4,7 @@ package email
 type EmailData struct {
 	MessageID string
 	Date      string
+	// Date      time.Time
 	From      string
 	To        string
 	Subject   string

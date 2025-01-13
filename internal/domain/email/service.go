@@ -6,16 +6,16 @@ import (
 	"os"
 	"strings"
 	"sync"
+	// "time"
 )
 
 // Función para procesar un archivo y extraer datos
-func ProcessFile(filePath string, results chan<- EmailData, wg *sync.WaitGroup) {
-	defer wg.Done()
+func ProcessFile(filePath string, results chan<- EmailData, wg *sync.WaitGroup) error {
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		fmt.Printf("Error opening file %s: %v\n", filePath, err)
-		return
+		fmt.Printf("Error abriendo el archivo %s: %v\n", filePath, err)
+		return err
 	}
 	defer file.Close()
 
@@ -28,6 +28,13 @@ func ProcessFile(filePath string, results chan<- EmailData, wg *sync.WaitGroup) 
 			email.MessageID = strings.TrimSpace(strings.TrimPrefix(line, "Message-ID:"))
 		} else if strings.HasPrefix(line, "Date:") {
 			email.Date = strings.TrimSpace(strings.TrimPrefix(line, "Date:"))
+			// dateStr := strings.TrimSpace(strings.TrimPrefix(line, "Date:"))
+			// parsedDate, parseErr := time.Parse("Mon, 02 Jan 2006 15:04:05 -0700", dateStr)
+			// if parseErr != nil {
+			// 	fmt.Printf("Error parsing date: %v\n", parseErr)
+			// 	continue
+			// }
+			// email.Date = parsedDate
 		} else if strings.HasPrefix(line, "From:") {
 			email.From = strings.TrimSpace(strings.TrimPrefix(line, "From:"))
 		} else if strings.HasPrefix(line, "To:") {
@@ -38,10 +45,10 @@ func ProcessFile(filePath string, results chan<- EmailData, wg *sync.WaitGroup) 
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Printf("Error leyendo archivo %s: %v\n", filePath, err)
-		return
+		fmt.Printf("error leyendo archivo %s: %v", filePath, err)
+		return err
 	}
 
-	// Enviar los datos extraídos al canal
 	results <- email
+	return nil
 }

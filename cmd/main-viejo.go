@@ -2,7 +2,9 @@ package main
 
 import (
 	"desafio-empresas/internal/domain/email"
+	// "desafio-empresas/internal/infrastructure/db"
 	"desafio-empresas/internal/utils"
+
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,6 +20,15 @@ func main2() {
 		return
 	}
 
+	// dbConn, err := db.InitMySQL()
+	// if err != nil {
+	// 	fmt.Printf("Error inicializando base de datos: %v\n", err)
+	// 	return
+	// }
+	// defer dbConn.Close()
+
+	// repo := email.NewEmailRepository(dbConn)
+
 	dir := os.Getenv("EMAILS_DIR")
 	if dir == "" {
 		fmt.Println("EMAILS_DIR no está configurado")
@@ -30,51 +41,42 @@ func main2() {
 		return
 	}
 
-	// Controlar concurrencia con semáforo
-	const maxGoroutines = 100 // Máximo de goroutines activas
-	sem := make(chan struct{}, maxGoroutines)
-
 	var wg sync.WaitGroup
 	results := make(chan email.EmailData, 100) // Canal con buffer
 
 	// Goroutine para recolectar e imprimir en terminal
 	go func() {
-		defer close(results)
 		for email := range results {
 			fmt.Printf("Email procesado: %+v\n", email)
 		}
 	}()
 
-	// Procesar archivos en el directorio
+	// Goroutine para recolectar y guardar en mysql
+	// go func() {
+	// 	for emailData := range results {
+	// 		if err := repo.Save(emailData); err != nil {
+	// 			fmt.Printf("Error guardando email: %v\n", err)
+	// 		}
+	// 	}
+	// }()
+
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
 		if !info.IsDir() {
-			// Adquirir permiso del semáforo
-			sem <- struct{}{}
 			wg.Add(1)
-
-			go func(filePath string) {
-				defer wg.Done()
-				defer func() { <-sem }() // Liberar el semáforo
-
-				// Procesar archivo
-				email.ProcessFile(filePath, results, &wg)
-			}(path)
+			go email.ProcessFile(path, results, &wg)
 		}
 		return nil
 	})
-
 	if err != nil {
 		fmt.Printf("Error walking directory: %v\n", err)
 		return
 	}
 
-	// Esperar a que todas las goroutines terminen
 	wg.Wait()
-
-	// Mostrar tiempo de ejecución
+	close(results)
 	fmt.Printf("Tiempo de ejecución: %v\n", time.Since(start))
 }
